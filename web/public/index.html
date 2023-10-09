@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .title {
+      font-size: 44px;
+      margin-bottom: 20px;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .button {
+      width: 130px;
+      height: 70px;
+      background-color: rgb(237 237, 229);
+      text-align: center;
+      cursor: pointer;
+      border-radius: 10px;
+      outline: none;
+    }
+    .highlighted {
+      background-color: rgb(90, 89, 78);
+    }
+    .correct {
+      background-color: limegreen;
+    }
+    #submitBtn {
+      margin-top: 20px;
+      width: 65px;
+      height: 35px; 
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2 class="title">Connections</h2>
+  <h4>Create four groups of four!</h4>
+  <div class="grid">
+    <button class="button">Button 1</button>
+    <button class="button">Button 2</button>
+    <button class="button">Button 3</button>
+    <button class="button">Button 4</button>
+    <button class="button">Button 5</button>
+    <button class="button">Button 6</button>
+    <button class="button">Button 7</button>
+    <button class="button">Button 8</button>
+    <button class="button">Button 9</button>
+    <button class="button">Button 10</button>
+    <button class="button">Button 11</button>
+    <button class="button">Button 12</button>
+    <button class="button">Button 13</button>
+    <button class="button">Button 14</button>
+    <button class="button">Button 15</button>
+    <button class="button">Button 16</button>
+  </div>
+  
+  <button id="submitBtn">Submit</button>
+  <script>
+    //Highlights the buttons, only allows 4 at any one time 
+    const buttons = document.querySelectorAll('.button');
+    const maxHighlighted = 4;
+  
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const isHighlighted = button.classList.contains('highlighted');
+        const isCorrect = button.classList.contains('correct');
+  
+        const highlightedCount = document.querySelectorAll('.highlighted').length;
+  
+        if (!isCorrect) {
+          if (isHighlighted) {
+            button.classList.remove('highlighted');
+          } else if (highlightedCount < maxHighlighted) {
+            button.classList.add('highlighted');
+          }
+        }
+      });
+    });
+  
+    // Fetch data from word_list.json and populate the buttons randomly
+    fetch('word_list.json') 
+      .then(response => response.json())
+      .then(data => {
+        const buttonElements = document.querySelectorAll('.button');
+        const usedWords = new Set(); 
+  
+        buttonElements.forEach(button => {
+          let randomWord;
+          do {
+            // Randomly select a category and word index
+            const randomCategoryIndex = Math.floor(Math.random() * data.length);
+            const randomWordIndex = Math.floor(Math.random() * data[randomCategoryIndex].length);
+            randomWord = data[randomCategoryIndex][randomWordIndex];
+          } while (usedWords.has(randomWord)); 
+  
+          usedWords.add(randomWord); // Mark the word as used
+          button.innerText = randomWord;
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+  
+    const highlightedWords = new Set();
+  
+    // Function to check if words are in the same group
+    function areWordsInSameGroup(wordList, words) {
+      const groups = wordList.map(group => new Set(group));
+      const groupIndex = groups.findIndex(group => words.every(word => group.has(word)));
+      return groupIndex !== -1;
+    }
+  
+    // event handler for submit button 
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.addEventListener('click', () => {
+      highlightedWords.clear();
+      buttons.forEach(button => {
+        if (button.classList.contains('highlighted')) {
+          highlightedWords.add(button.innerText);
+        }
+      });
+  
+      if (highlightedWords.size === 4) {
+        const highlightedWordsArray = Array.from(highlightedWords);
+  
+        // Fetch data from word_list.json and check if the words are in the same group
+        fetch('word_list.json')
+          .then(response => response.json())
+          .then(data => {
+            if (areWordsInSameGroup(data, highlightedWordsArray)) {
+              alert('Words are in the same group! Keep going!');
+  
+              buttons.forEach(button => {
+                if (highlightedWordsArray.includes(button.innerText)) {
+                  button.classList.add('correct');
+                  // Deselect the highlighted buttons
+                  button.classList.remove('highlighted');
+                  // Make the button non-clickable 
+                  button.disabled = true;
+                }
+              });
+            } else {
+              alert('Words are not in the same group. Try again.');
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching data:', error);
+          });
+      } else {
+        alert('Please select exactly 4 words.');
+      }
+    });
+  
+  </script>
+  
+</body>
+</html>
